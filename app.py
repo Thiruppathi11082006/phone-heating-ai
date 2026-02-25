@@ -1,113 +1,235 @@
 import streamlit as st
-import numpy as np
-import joblib
-import pandas as pd
 
-# ---------------- PAGE SETTINGS ----------------
-st.set_page_config(
-    page_title="Smart Phone Heating AI",
-    page_icon="📱",
-    layout="wide"
-)
+# ---------------- PAGE ----------------
+st.set_page_config(page_title="Phone Heating Risk Prediction", layout="wide")
 
-model = joblib.load("rf_model.pkl")
-
-# ---------------- HEADER ----------------
+# ---------------- STYLE ----------------
 st.markdown("""
-<h1 style='text-align:center;color:#00d4ff;'>
-📱 Smart Phone Heating AI Dashboard
-</h1>
-<hr>
+<style>
+
+.stApp {
+    background: radial-gradient(circle at top,#0b1220,#06090f);
+}
+
+/* Main Title */
+.main-title {
+    text-align:center;
+    color:#00e5ff;
+    font-size:42px;
+    font-weight:bold;
+    text-shadow:0px 0px 25px rgba(0,229,255,0.6);
+}
+
+/* Glass Panel */
+.glass {
+    background: rgba(255,255,255,0.05);
+    border-radius:18px;
+    padding:30px;
+    backdrop-filter: blur(14px);
+    border:1px solid rgba(255,255,255,0.08);
+}
+
+/* Section Title */
+.section-title {
+    font-size:22px;
+    font-weight:bold;
+    color:#ffffff;
+    margin-bottom:15px;
+    text-align:center;
+    letter-spacing:1px;
+}
+
+/* Status */
+.status-live {
+    color:#00ff9f;
+    font-weight:bold;
+    text-align:center;
+    margin-bottom:10px;
+}
+
+/* Info Cards */
+.info-card {
+    background:#111827;
+    padding:18px;
+    border-radius:14px;
+    text-align:center;
+    border:1px solid rgba(255,255,255,0.06);
+}
+
+/* Result Card */
+.big-card {
+    margin-top:80px;
+    padding:60px;
+    border-radius:20px;
+    text-align:center;
+    background:#111827;
+    box-shadow:0px 0px 40px red;
+    color:white;
+}
+
+/* Footer */
+.footer {
+    text-align:center;
+    color:gray;
+    margin-top:40px;
+    font-size:14px;
+}
+
+</style>
 """, unsafe_allow_html=True)
 
-# ---------------- SIDEBAR INPUT ----------------
-st.sidebar.header("⚙ Device Controls")
+# ---------------- SESSION STATE ----------------
+if "page" not in st.session_state:
+    st.session_state.page = "home"
 
-cpu = st.sidebar.slider("CPU Usage (%)", 0, 100, 50)
-temp = st.sidebar.slider("Temperature (°C)", 20, 50, 35)
-charging = st.sidebar.toggle("Charging Mode")
-brightness = st.sidebar.slider("Brightness (%)", 0, 100, 60)
-apps = st.sidebar.slider("Running Apps", 0, 15, 5)
-network = st.sidebar.slider("Network Usage (%)", 0, 100, 40)
+if "result" not in st.session_state:
+    st.session_state.result = (
+        "SAFE",
+        "lime",
+        "✅ Device temperature is stable. No action required."
+    )
 
-charging_val = 1 if charging else 0
+# ==================================================
+# HOME PAGE
+# ==================================================
+if st.session_state.page == "home":
 
-input_data = np.array([[cpu, temp, charging_val,
-                        brightness, apps, network]])
-
-# ---------------- PREDICT BUTTON ----------------
-st.markdown("## 🚀 Run AI Prediction")
-
-predict = st.button(
-    "🔥 Predict Heating Risk",
-    use_container_width=True
-)
-
-# session storage
-if "prediction" not in st.session_state:
-    st.session_state.prediction = None
-    st.session_state.confidence = 0
-
-# ---------------- PREDICTION ----------------
-if predict:
-
-    pred = model.predict(input_data)[0]
-    prob = model.predict_proba(input_data)[0]
-
-    # -------- SMART SAFETY OVERRIDE --------
-    if brightness > 85 and apps > 10:
-        pred = 1
-
-    if cpu > 85 and charging and brightness > 80:
-        pred = 2
-
-    if temp >= 42:
-        pred = 2
-
-    st.session_state.prediction = pred
-    st.session_state.confidence = round(max(prob) * 100, 2)
-
-prediction = st.session_state.prediction
-confidence = st.session_state.confidence
-
-# ---------------- RESULT DISPLAY ----------------
-st.markdown("---")
-st.subheader("🤖 AI Heating Risk Analysis")
-
-if prediction == 0:
-    st.success("✅ SAFE — Device operating normally")
-
-elif prediction == 1:
-    st.warning("⚠ WARNING — Device heating risk detected")
-    st.info("👉 Reduce brightness or close background apps.")
-
-elif prediction == 2:
-    st.error("🔥 CRITICAL HEATING RISK!")
     st.markdown("""
-    ### 🚨 Immediate Actions
-    - Stop heavy applications
-    - Disconnect charger
-    - Allow device cooling
-    """)
+    <div class="main-title">
+    📱 PHONE HEATING RISK PREDICTION USING ML
+    </div>
+    <p class="status-live">🟢 AI Monitoring System Active</p>
+    <hr>
+    """, unsafe_allow_html=True)
 
-# ---------------- CONFIDENCE ----------------
-if prediction is not None:
-    st.markdown("### 🧠 AI Confidence Level")
-    st.progress(confidence / 100)
-    st.write(f"Prediction Confidence: **{confidence}%**")
+    # -------- Device Parameters Panel --------
+    st.markdown('<div class="glass">', unsafe_allow_html=True)
 
-# ---------------- MINI DATA GRAPH ----------------
-data = pd.read_csv("phone_heating_dataset.csv")
+    st.markdown("""
+    <div class="section-title">
+    ⚙️ Device Parameters
+    </div>
+    """, unsafe_allow_html=True)
 
-st.markdown("---")
-st.subheader("📊 Training Dataset Temperature Trend")
+    c1, c2, c3 = st.columns(3)
 
-st.line_chart(data["Temp"])
+    with c1:
+        cpu = st.slider("CPU Usage (%)", 0, 100, 50)
+        temp = st.slider("Temperature (°C)", 20, 50, 35)
 
-# ---------------- FOOTER ----------------
-st.markdown("""
-<hr>
-<p style='text-align:center;color:gray;'>
-Machine Learning Fundamentals Project by Thiru
-</p>
-""", unsafe_allow_html=True)
+    with c2:
+        charging = st.toggle("Charging Mode")
+        brightness = st.slider("Brightness (%)", 0, 100, 60)
+
+    with c3:
+        apps = st.slider("Running Apps", 0, 15, 5)
+        network = st.slider("Network Usage (%)", 0, 100, 40)
+
+    st.markdown('</div>', unsafe_allow_html=True)
+
+    # -------- Predict Button --------
+    if st.button("🔥 Predict Heating Risk", use_container_width=True):
+
+        warnings = []
+        critical = 0
+
+        if cpu >= 75:
+            warnings.append("CPU usage high → Close heavy applications")
+            critical += 1
+
+        if temp >= 42:
+            warnings.append("Temperature critical → Stop device usage immediately")
+            critical += 2
+
+        if brightness >= 75:
+            warnings.append("Brightness too high → Reduce brightness")
+            critical += 1
+
+        if apps >= 10:
+            warnings.append("Too many apps → Close background apps")
+            critical += 1
+
+        if network >= 75:
+            warnings.append("High network usage → Stop downloads")
+            critical += 1
+
+        if critical == 0:
+            st.session_state.result = (
+                "SAFE",
+                "lime",
+                "✅ Device temperature is stable. No action required."
+            )
+        elif critical <= 2:
+            st.session_state.result = (
+                "WARNING",
+                "orange",
+                "<br>".join(warnings)
+            )
+        else:
+            st.session_state.result = (
+                "CRITICAL HEATING RISK",
+                "red",
+                "<br>".join(warnings)
+            )
+
+        st.session_state.page = "result"
+        st.rerun()
+
+    # -------- Risk Guide --------
+    st.markdown("### 🔎 Risk Level Guide")
+
+    g1, g2, g3 = st.columns(3)
+
+    with g1:
+        st.markdown("""
+        <div class="info-card">
+        🟢 <b>SAFE</b><br>
+        Normal device operation
+        </div>
+        """, unsafe_allow_html=True)
+
+    with g2:
+        st.markdown("""
+        <div class="info-card">
+        🟠 <b>WARNING</b><br>
+        Heating starting to increase
+        </div>
+        """, unsafe_allow_html=True)
+
+    with g3:
+        st.markdown("""
+        <div class="info-card">
+        🔴 <b>CRITICAL</b><br>
+        Immediate cooling required
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Footer
+    st.markdown("""
+    <div class="footer">
+    ⚡ Machine Learning Fundamentals Project • AI Thermal Safety Monitor
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==================================================
+# RESULT PAGE
+# ==================================================
+elif st.session_state.page == "result":
+
+    status, color, message = st.session_state.result
+
+    if st.button("⬅ Back"):
+        st.session_state.page = "home"
+        st.rerun()
+
+    action_text = ""
+    if status != "SAFE":
+        action_text = "<h3>⚠ Take Action Immediately</h3>"
+
+    st.markdown(f"""
+    <div class="big-card">
+        <h1 style="color:{color}; font-size:60px;">{status}</h1>
+        <p style="font-size:22px;">{message}</p>
+        {action_text}
+    </div>
+    """, unsafe_allow_html=True)

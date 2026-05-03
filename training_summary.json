@@ -1,0 +1,42 @@
+{
+  "model_name": "Critical-aware RandomForestClassifier",
+  "feature_columns": [
+    "cpu",
+    "temp",
+    "charging",
+    "brightness",
+    "apps",
+    "network"
+  ],
+  "original_class_counts": {
+    "0": 254,
+    "1": 239,
+    "2": 7
+  },
+  "augmented_class_counts": {
+    "0": 254,
+    "1": 239,
+    "2": 180
+  },
+  "test_accuracy": 0.8935,
+  "critical_precision": 0.9783,
+  "critical_recall": 1.0,
+  "critical_f1": 0.989,
+  "confusion_matrix": [
+    [
+      56,
+      8,
+      0
+    ],
+    [
+      9,
+      50,
+      1
+    ],
+    [
+      0,
+      0,
+      45
+    ]
+  ]
+}
